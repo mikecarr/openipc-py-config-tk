@@ -3,6 +3,7 @@ from tkinter import ttk, scrolledtext, filedialog
 import paramiko
 import threading
 import yaml
+from PIL import Image, ImageTk  # Make sure to install Pillow
 
 # Default values
 DEFAULT_IP = "10.100.0.187"
@@ -14,12 +15,23 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title("Configuration App")
-        self.root.geometry("800x600")
+        self.root.geometry("800x800")
+
+        # Load the image
+        self.image = Image.open("images/openipc.png")
+        self.photo = ImageTk.PhotoImage(self.image)
+        # Create a label to display the image
+        self.image_label = tk.Label(self.root, image=self.photo)
+        self.image_label.pack()
+
 
         self.ip = tk.StringVar(value=DEFAULT_IP)
         self.username = tk.StringVar(value=DEFAULT_USER)
         self.password = tk.StringVar(value=DEFAULT_PASSWORD)
         self.timeout = tk.IntVar(value=TIMEOUT)
+
+
+
 
         self.create_widgets()
 
@@ -27,6 +39,7 @@ class App:
         # Notebook for tabs
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill="both", expand=True)
+
 
         # Create tabs
         self.wfb_conf_frame = ttk.Frame(self.notebook)

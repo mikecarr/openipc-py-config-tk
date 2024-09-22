@@ -2,6 +2,12 @@
 
 Configurator app in Python
 
+Key Features
+* Tabs: Includes tabs for wfb.conf, majestic.yaml, and application logs.
+* SSH Connection: Connects to a remote device via SSH and retrieves configuration files.
+* Save Functions:
+    * Save Log: Allows users to save logs to a text file.
+    * Save Majestic YAML: Collects updated YAML entries and saves them to a specified path.
 
 ## Setup
 ```
