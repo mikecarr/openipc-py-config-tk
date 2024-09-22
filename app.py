@@ -17,6 +17,10 @@ class App:
         self.root.title("Configuration App")
         self.root.geometry("800x800+100+100")  # Set size and position
 
+        # Ensure the window is focused
+        self.root.deiconify()  # Make sure the window is shown
+        self.root.focus_force()  # Bring the window to the front
+
         # Load the image
         self.image = Image.open("images/openipc.png")
         self.photo = ImageTk.PhotoImage(self.image)
@@ -24,15 +28,10 @@ class App:
         self.image_label = tk.Label(self.root, image=self.photo)
         self.image_label.pack()
 
-
         self.ip = tk.StringVar(value=DEFAULT_IP)
         self.username = tk.StringVar(value=DEFAULT_USER)
         self.password = tk.StringVar(value=DEFAULT_PASSWORD)
         self.timeout = tk.IntVar(value=TIMEOUT)
-
-        self.root.deiconify()  # Ensure the window is visible
-        self.root.focus_force()  # Bring the window to the front
-
 
         self.create_widgets()
 
@@ -41,62 +40,42 @@ class App:
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill="both", expand=True)
 
-
         # Create tabs
         self.wfb_conf_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.wfb_conf_frame, text="wfb.conf")
 
         self.majestic_yaml_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.majestic_yaml_frame, text="majestic.yaml")
-        print("Majestic tab created")  # Debug message
+
+        self.gs_conf_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.gs_conf_frame, text="gs.conf")
 
         self.logs_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.logs_frame, text="Application Logs")
 
-
         # Create scrollable frame for wfb.conf
-        self.wfb_conf_canvas = tk.Canvas(self.wfb_conf_frame)
-        self.wfb_conf_scrollbar = ttk.Scrollbar(self.wfb_conf_frame, orient="vertical", command=self.wfb_conf_canvas.yview)
-        self.wfb_conf_scrollable_frame = ttk.Frame(self.wfb_conf_canvas)
-
-        self.wfb_conf_scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.wfb_conf_canvas.configure(
-                scrollregion=self.wfb_conf_canvas.bbox("all")
-            )
-        )
-
-        self.wfb_conf_canvas.create_window((0, 0), window=self.wfb_conf_scrollable_frame, anchor="nw")
-        self.wfb_conf_scrollbar.config(command=self.wfb_conf_canvas.yview)
-
-        self.wfb_conf_canvas.pack(side="left", fill="both", expand=True)
-        self.wfb_conf_scrollbar.pack(side="right", fill="y")
+        self.create_scrollable_frame(self.wfb_conf_frame, "wfb")
 
         # Create scrollable frame for majestic.yaml
-        self.majestic_yaml_canvas = tk.Canvas(self.majestic_yaml_frame)
-        self.majestic_yaml_scrollbar = ttk.Scrollbar(self.majestic_yaml_frame, orient="vertical", command=self.majestic_yaml_canvas.yview)
-        self.majestic_yaml_scrollable_frame = ttk.Frame(self.majestic_yaml_canvas)
+        self.create_scrollable_frame(self.majestic_yaml_frame, "majestic")
 
-        # Inside the create_widgets method, after updating the majestic YAML tab
-        self.update_majestic_yaml_tab("")  # Ensure this is called to populate the tab
+        # Create scrollable frame for gs.conf
+        self.gs_conf_canvas = tk.Canvas(self.gs_conf_frame)
+        self.gs_conf_scrollbar = ttk.Scrollbar(self.gs_conf_frame, orient="vertical", command=self.gs_conf_canvas.yview)
+        self.gs_conf_scrollable_frame = ttk.Frame(self.gs_conf_canvas)
 
-        # Add Save button to the majestic.yaml tab
-        self.save_button = ttk.Button(self.majestic_yaml_frame, text="Save", command=self.save_majestic_yaml)
-        self.save_button.pack(pady=10)
-
-
-        self.majestic_yaml_scrollable_frame.bind(
+        self.gs_conf_scrollable_frame.bind(
             "<Configure>",
-            lambda e: self.majestic_yaml_canvas.configure(
-                scrollregion=self.majestic_yaml_canvas.bbox("all")
+            lambda e: self.gs_conf_canvas.configure(
+                scrollregion=self.gs_conf_canvas.bbox("all")
             )
         )
 
-        self.majestic_yaml_canvas.create_window((0, 0), window=self.majestic_yaml_scrollable_frame, anchor="nw")
-        self.majestic_yaml_scrollbar.config(command=self.majestic_yaml_canvas.yview)
+        self.gs_conf_canvas.create_window((0, 0), window=self.gs_conf_scrollable_frame, anchor="nw")
+        self.gs_conf_scrollbar.config(command=self.gs_conf_canvas.yview)
 
-        self.majestic_yaml_canvas.pack(side="left", fill="both", expand=True)
-        self.majestic_yaml_scrollbar.pack(side="right", fill="y")
+        self.gs_conf_canvas.pack(side="left", fill="both", expand=True)
+        self.gs_conf_scrollbar.pack(side="right", fill="y")
 
         # Create logs area
         self.logs_text = scrolledtext.ScrolledText(self.logs_frame, wrap="word", height=20)
@@ -106,19 +85,36 @@ class App:
         self.save_log_button = ttk.Button(self.logs_frame, text="Save Log", command=self.save_log)
         self.save_log_button.pack(pady=10)
 
-        # Add form elements to wfb.conf tab
-        self.wfb_entries = {}
-        self.update_wfb_conf_tab("")
-
-        # Add form elements to majestic.yaml tab
-        self.majestic_entries = {}
-        self.update_majestic_yaml_tab("")
-
         # Add connection form
         self.connection_frame = ttk.Frame(self.root)
         self.connection_frame.pack(pady=10)
 
         self.create_connection_form(self.connection_frame)
+
+    def create_scrollable_frame(self, frame, type_):
+        canvas = tk.Canvas(frame)
+        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+            )
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        scrollbar.config(command=canvas.yview)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        if type_ == "wfb":
+            self.wfb_conf_canvas = canvas
+            self.wfb_conf_scrollable_frame = scrollable_frame
+        elif type_ == "majestic":
+            self.majestic_yaml_canvas = canvas
+            self.majestic_yaml_scrollable_frame = scrollable_frame
 
     def create_connection_form(self, parent):
         # IP Address
@@ -172,14 +168,17 @@ class App:
             stdin, stdout, stderr = ssh.exec_command("cat /etc/wfb.conf")
             wfb_conf_output = stdout.read().decode()
             self.append_log("Output of /etc/wfb.conf:\n" + wfb_conf_output)
+            self.update_wfb_conf_tab(wfb_conf_output)
 
             stdin, stdout, stderr = ssh.exec_command("cat /etc/majestic.yaml")
             majestic_yaml_output = stdout.read().decode()
             self.append_log("Output of /etc/majestic.yaml:\n" + majestic_yaml_output)
-
-            # Update tabs with the content
-            self.update_wfb_conf_tab(wfb_conf_output)
             self.update_majestic_yaml_tab(majestic_yaml_output)
+
+            stdin, stdout, stderr = ssh.exec_command("cat /etc/gs.conf")
+            gs_conf_output = stdout.read().decode()
+            self.append_log("Output of /etc/gs.conf:\n" + gs_conf_output)
+            self.update_gs_conf_tab(gs_conf_output)
 
             # Close connection
             ssh.close()
@@ -208,41 +207,13 @@ class App:
                 entry = tk.Entry(self.wfb_conf_scrollable_frame, width=40)
                 entry.grid(row=row_number, column=1, padx=5, pady=2, sticky="w")
                 entry.insert(0, value)
-                self.wfb_entries[key] = entry
                 row_number += 1
 
         # Update the scroll region of the canvas
         self.wfb_conf_canvas.update_idletasks()
         self.wfb_conf_canvas.config(scrollregion=self.wfb_conf_canvas.bbox("all"))
 
-    # def update_majestic_yaml_tab(self, yaml_content):
-    #     if yaml_content:
-    #         try:
-    #             data = yaml.safe_load(yaml_content)
-    #             if data:
-    #                 # Clear the previous widgets in the tab
-    #                 for widget in self.majestic_yaml_frame.winfo_children():
-    #                     widget.destroy()
-
-    #                 # Create a vertical form layout for YAML content
-    #                 row = 0
-    #                 for key, value in data.items():
-    #                     label = tk.Label(self.majestic_yaml_frame, text=f"{key}:")
-    #                     label.grid(row=row, column=0, sticky='w')
-
-    #                     text_box = tk.Entry(self.majestic_yaml_frame, width=50)
-    #                     text_box.grid(row=row, column=1, sticky='w')
-    #                     text_box.insert(0, str(value))
-
-    #                     row += 1
-    #             else:
-    #                 print("No data found in YAML content.")
-    #         except yaml.YAMLError as e:
-    #             print(f"Error parsing YAML: {e}")
-    #     else:
-    #         print("YAML content is empty or None.")
-
-    # Update the majestic_yaml_tab method to ensure the scrollable frame is populated
+     # Update the majestic_yaml_tab method to ensure the scrollable frame is populated
     def update_majestic_yaml_tab(self, yaml_content):
         if yaml_content:
             try:
@@ -305,26 +276,40 @@ class App:
         else:
             print("YAML content is empty or None.")
 
-    def save_log(self):
-        # Ask the user where to save the log file
-        log_content = self.logs_text.get("1.0", tk.END)  # Get all text from the logs
-        if not log_content.strip():
-            print("No logs to save.")
-            return
 
-        file_path = filedialog.asksaveasfilename(
-            defaultextension=".txt",
-            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-            title="Save Log"
-        )
+    def update_gs_conf_tab(self, content):
+        # Clear existing widgets
+        for widget in self.gs_conf_scrollable_frame.winfo_children():
+            widget.destroy()
 
-        if file_path:  # Proceed if a valid path is provided
-            try:
-                with open(file_path, 'w') as file:
-                    file.write(log_content)
-                print(f"Log saved successfully to {file_path}.")
-            except Exception as e:
-                print(f"Error saving log: {e}")
+        # Parse and display the content
+        lines = content.splitlines()
+        row_number = 0
+        for line in lines:
+            if "=" in line:
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip()
+
+                # Create new entry for each key-value pair
+                ttk.Label(self.gs_conf_scrollable_frame, text=key).grid(row=row_number, column=0, padx=5, pady=5, sticky="e")
+                entry = tk.Entry(self.gs_conf_scrollable_frame, width=60)  # Adjust width for better visibility
+                entry.grid(row=row_number, column=1, padx=5, pady=5, sticky="w")
+                entry.insert(0, value)
+                row_number += 1
+
+        # Add a Save button for this tab if needed
+        self.save_button_gs = ttk.Button(self.gs_conf_scrollable_frame, text="Save", command=self.save_gs_conf)
+        self.save_button_gs.grid(row=row_number, column=0, columnspan=2, pady=10)
+
+        # Update the scroll region of the canvas
+        self.gs_conf_canvas.update_idletasks()
+        self.gs_conf_canvas.config(scrollregion=self.gs_conf_canvas.bbox("all"))
+
+
+    def append_log(self, message):
+        self.logs_text.insert(tk.END, message + "\n")
+        self.logs_text.yview(tk.END)  # Auto-scroll to the end
 
     def save_majestic_yaml(self):
         updated_data = {}
@@ -343,9 +328,11 @@ class App:
         except Exception as e:
             print(f"Error saving YAML: {e}")
 
-    def append_log(self, message):
-        self.logs_text.insert("end", message + "\n")
-        self.logs_text.yview("end")
+    def save_log(self):
+        file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt")])
+        if file_path:
+            with open(file_path, 'w') as f:
+                f.write(self.logs_text.get("1.0", tk.END))
 
 if __name__ == "__main__":
     root = tk.Tk()
