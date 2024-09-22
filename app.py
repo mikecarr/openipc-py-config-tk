@@ -1,6 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
-from tkinter import scrolledtext
+from tkinter import ttk, scrolledtext, filedialog
 import paramiko
 import threading
 import yaml
@@ -39,6 +38,7 @@ class App:
 
         self.logs_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.logs_frame, text="Application Logs")
+
 
         # Create scrollable frame for wfb.conf
         self.wfb_conf_canvas = tk.Canvas(self.wfb_conf_frame)
@@ -87,6 +87,10 @@ class App:
         # Create logs area
         self.logs_text = scrolledtext.ScrolledText(self.logs_frame, wrap="word", height=20)
         self.logs_text.pack(fill="both", expand=True)
+
+        # Add Save Log button to logs tab
+        self.save_log_button = ttk.Button(self.logs_frame, text="Save Log", command=self.save_log)
+        self.save_log_button.pack(pady=10)
 
         # Add form elements to wfb.conf tab
         self.wfb_entries = {}
@@ -287,7 +291,26 @@ class App:
         else:
             print("YAML content is empty or None.")
 
+    def save_log(self):
+        # Ask the user where to save the log file
+        log_content = self.logs_text.get("1.0", tk.END)  # Get all text from the logs
+        if not log_content.strip():
+            print("No logs to save.")
+            return
 
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+            title="Save Log"
+        )
+
+        if file_path:  # Proceed if a valid path is provided
+            try:
+                with open(file_path, 'w') as file:
+                    file.write(log_content)
+                print(f"Log saved successfully to {file_path}.")
+            except Exception as e:
+                print(f"Error saving log: {e}")
 
     def save_majestic_yaml(self):
         updated_data = {}
