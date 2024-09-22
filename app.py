@@ -15,7 +15,7 @@ class App:
     def __init__(self, root):
         self.root = root
         self.root.title("Configuration App")
-        self.root.geometry("800x800")
+        self.root.geometry("800x800+100+100")  # Set size and position
 
         # Load the image
         self.image = Image.open("images/openipc.png")
@@ -30,7 +30,8 @@ class App:
         self.password = tk.StringVar(value=DEFAULT_PASSWORD)
         self.timeout = tk.IntVar(value=TIMEOUT)
 
-
+        self.root.deiconify()  # Ensure the window is visible
+        self.root.focus_force()  # Bring the window to the front
 
 
         self.create_widgets()
